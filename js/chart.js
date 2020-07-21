@@ -1,10 +1,13 @@
 var vm = new Vue({
   el: "#app",
-  template: '<div id="drawDiv" @mousemove="moveMouse($event)" style="height: 100%;">' +
-    '        <div>' +
-    '            <el-button type="primary" @click="saveChange">保 存</el-button>' +
+  template: '<div id="drawDiv" @mousemove="moveMouse($event)" style="height: 100%; display: flex; justify-content: flex-end">' +
+    '        <div class="left-content">' +
+    '         <div>' +
+    '           <ul v-for="item in modelData"><div>{{item.name}}</div><li v-for="item1 in item.content" class="left-sub-title">{{item1.name}}</li></ul>' +
+    '         </div>' +
+    '         <el-button type="primary" @click="saveChange">保 存</el-button>' +
     '        </div>' +
-    '        <div class="panel-body points demo flow_chart" id="points" style="height: 80%; width: 80%">' +
+    '        <div class="panel-body points demo flow_chart" id="points">' +
     '          <div v-for="(val, point) in data.formMap" :id="point" class="point" :style="calPosition(point, val)">' +
     '            <div :id="`drag-${point}`" style="padding:0 0.5em; background: #409EFF; cursor: default; display: flex; justify-content: space-between"><span class="name-change" style="font-size: 12px;">{{val.name}}</span></div>' +
     '            <div class="add-content">' +
@@ -20,18 +23,24 @@ var vm = new Vue({
     '                <el-form-item prop="name" label="子表名：">' +
     '                    <el-input v-model="data.formMap[tableForm.formId].name" readonly/>' +
     '                </el-form-item>' +
-    '                <el-form-item prop="code" label="子表明关联字段">' +
+    '                <el-form-item label="子表明关联字段">' +
     '                  <el-input v-model="data.formMap[tableForm.formId].fieldMap[tableForm.fieldId].name" readonly/>' +
     '                </el-form-item>' +
-    '              <el-form-item prop="name" label="父表名：">' +
+    '              <el-form-item label="父表名：">' +
     '                <el-input v-model="data.formMap[tableForm.targetFormId].name" readonly/>' +
     '              </el-form-item>' +
-    '              <el-form-item prop="code" label="父表关联字段">' +
+    '              <el-form-item label="父表关联字段">' +
     '                <el-input v-model="data.formMap[tableForm.targetFormId].fieldMap[tableForm.targetFieldId].name" readonly/>' +
     '              </el-form-item>' +
-    '              <el-form-item prop="code" label="父表关联显示字段">' +
+    '              <el-form-item  label="父表关联显示字段">' +
     '                <el-select style="width: 100%" v-model="tableForm.targetDisplayFieldId" @change="changeSelect">' +
     '                  <el-option v-for="(val, key) in data.formMap[tableForm.targetFormId].fieldMap" :key="key" :value="val.id" :label="val.name"></el-option>' +
+    '                </el-select>' +
+    '              </el-form-item>' +
+    '              <el-form-item  label="连线类型">' +
+    '                <el-select style="width: 100%" v-model="tableForm.lineType">' +
+    '                  <el-option key="1" :value="1" label="关联">关联</el-option>' +
+    '                  <el-option key="2" :value="2" label="推送">推送</el-option>' +
     '                </el-select>' +
     '              </el-form-item>' +
     '            </el-form>' +
@@ -53,6 +62,27 @@ var vm = new Vue({
     currentConn: null,
     editVisible: false,
     dialogVisible: false,
+    modelData: [
+      {
+        id: 1,
+        name: '公共信息模型',
+        content: [{ id: 1, name: '数据字典' }, { id: 2, name: '公共数据源' }, { id: 3, name: '业务配置表' }, {
+          id: 4, name: '组织模型'
+        }, { id: 5, name: '角色模型' }, { id: 6, name: '权限模型' }, { id: 7, name: '人员模型' }]
+      }, {
+        id: 1,
+        name: '业务模型',
+        content: [{ id: 1, name: '客户信息表' }, { id: 2, name: '客户订单表' }]
+      }, {
+        id: 1,
+        name: '业务组合模型',
+        content: [{ id: 1, name: '客户订单物流信息表' }]
+      }
+    ],
+    defaultProps: {
+      children: 'content',
+      label: 'name'
+    },
     data: {
       formIds: [],//表单的id列表
       formMap: { //以表单的id作为key的表单Map结构
@@ -129,8 +159,8 @@ var vm = new Vue({
       if (val.x && val.y){
         return { left: val.x + '%', top: val.y + '%' }
       }else{
-        let randomX = Math.ceil(Math.random() * 100);
-        let randomY = Math.ceil(Math.random() * 90)
+        let randomX = Math.ceil(Math.random() * 80);
+        let randomY = Math.ceil(Math.random() * 80);
         this.data.formMap[point].x = randomX;
         this.data.formMap[point].y = randomY;
         return { left: randomX + '%', top: randomY + '%' }
@@ -147,7 +177,9 @@ var vm = new Vue({
     tableChange(){
       // 保存修改后连线
       this.editVisible = false;
-      console.log(this.data);
+      this.currentConn.getOverlay("label").setLabel(this.tableForm.lineType === 1 ? '关联' : '推送');
+      this.tableForm.lineId = (this.tableForm.formId + '_' + this.tableForm.fieldId + '_' + this.tableForm.targetFormId + '_' + this.tableForm.targetFieldId + '_' + this.tableForm.lineType);
+      console.log(this.data.formMap);
     },
     cancel(){
       this.dialogVisible = false;
@@ -158,8 +190,6 @@ var vm = new Vue({
         this.newElements.style.top = event.offsetY;
         console.log(event.offsetX + ',' + event.offsetY);
       }
-    },
-    refresh(){
     },
     // 增加字段项
     editTable(conn){
@@ -200,7 +230,7 @@ var vm = new Vue({
         // notice the 'curviness' argument to this Bezier curve.
         // the curves on this page are far smoother
         // than the curves on the first demo, which use the default curviness value.
-        // Connector: ['Flowchart', { curviness: 50 }],
+        Connector: ['Flowchart', { curviness: 50 }],
         DragOptions: { cursor: 'pointer', zIndex: 5000 },
         PaintStyle: { lineWidth: 5, stroke: color },
         HoverPaintStyle: { stroke: '#66b1ff', lineWidth: 4 },
@@ -224,6 +254,16 @@ var vm = new Vue({
               length: 11,
               id: "ARROW",
             }
+          ],
+          [
+            "Label",
+            {
+              location: 0.5,
+              label: '关联',
+              visible: true,
+              id: "label",
+              cssClass: "aLabel",
+            }
           ]]
       });
       // suspend drawing and initialise.
@@ -232,12 +272,12 @@ var vm = new Vue({
         for (const point in vm.data.formMap){
           for (const m in vm.data.formMap[point].fieldMap){
             vm.instance.makeSource(point + '-' + m, {
-              anchor: [ "Continuous", { faces:["left","right"] }],
+              anchor: ["Continuous", { faces: ["left", "right"] }],
               endpoint: 'Dot',
               maxConnections: 1,
             });
             vm.instance.makeTarget(point + '-' + m, {
-              anchor: [ "Continuous", { faces:["left","right"] }],
+              anchor: ["Continuous", { faces: ["left", "right"] }],
               allowLoopback: false
             });
           }
@@ -245,9 +285,40 @@ var vm = new Vue({
             containment: 'points',
             // 拖拽后改变位置
             stop: function (e){
-              console.log(e.el)
-              vm.data.formMap[e.el.id].x = e.pos[0];
-              vm.data.formMap[e.el.id].y = e.pos[1];
+              vm.data.formMap[e.el.id].x = (e.pos[0] / e.el.parentNode.offsetWidth).toFixed(2) * 100;
+              vm.data.formMap[e.el.id].y = (e.pos[1] / e.el.parentNode.offsetHeight).toFixed(2) * 100;
+            }
+          });
+          vm.instance.draggable(document.querySelectorAll('.left-sub-title'), {
+            helper: 'clone',
+            scope: 'ss',
+            drag: function(e) {
+              e.el.style.position = 'absolute';
+            }
+          });
+          // 拖拽新增
+          vm.instance.droppable('points',{
+            scope: 'ss',
+            drop: function(event){
+              let leftP = (parseInt(event.drag.el.style.left) / event.drop.el.offsetWidth).toFixed(2) * 100;
+              let topP = (parseInt(event.drag.el.style.top) / event.drop.el.offsetHeight).toFixed(2) * 100;
+              vm.$set(vm.data.formMap, event.drag.el.id, {
+                x: leftP,
+                y: topP,
+                name: event.drag.el.textContent,
+                fieldIds: [1, 2],//字段id列表
+                fieldMap: {//以字段id为key的字段map
+                  1: {
+                    id: 1, //字段id
+                    bizId: 'column1',//业务id，表字段名
+                    name: 'xxx',//字段中文名
+                    otherAttrs: { //其它属性中
+                      targetLines: [{ // 连线都放到起点节点上，数组json结构存储,目标节点连线,支持多个
+                      }],
+                    }
+                  }
+                },
+              });
               console.log(vm.data.formMap)
             }
           });
@@ -261,7 +332,27 @@ var vm = new Vue({
               for (const line in targetLines){
                 vm.instance.connect({
                   source: targetLines[line].formId + '-' + targetLines[line].fieldId,
-                  target: targetLines[line].targetFormId + '-' + targetLines[line].targetFieldId
+                  target: targetLines[line].targetFormId + '-' + targetLines[line].targetFieldId,
+                  overlays: [
+                    [
+                      "Arrow",
+                      {
+                        location: 1,
+                        visible: true,
+                        width: 11,
+                        length: 11,
+                        id: "ARROW",
+                      }
+                    ], [
+                      "Label",
+                      {
+                        location: 0.5,
+                        label: targetLines[line].lineType === 1 ? '关联' : '推送',
+                        visible: true,
+                        id: "label",
+                        cssClass: "aLabel",
+                      }
+                    ]]
                 });
               }
             }
@@ -273,7 +364,7 @@ var vm = new Vue({
         vm.instance.bind("connection", function (connInfo, originalEvent){
           let lineAttr = {
             lineId: (connInfo.connection.sourceId + '_' + connInfo.connection.targetId + '_1').replace(/-/g, '_'),
-            lineType: connInfo.connection.sourceId.split('-')[0],
+            lineType: 1,
             formId: parseInt(connInfo.connection.sourceId.split('-')[0]),
             fieldId: parseInt(connInfo.connection.sourceId.split('-')[1]),
             targetFormId: parseInt(connInfo.connection.targetId.split('-')[0]),

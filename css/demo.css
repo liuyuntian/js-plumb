@@ -8,6 +8,20 @@
 	width:12em;
 	line-height:2em;
 }
+ul div {
+    margin-left: 6%;
+    height: 40px;
+    font-weight: bold;
+}
+li {
+    margin-left: 12%;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    z-index: 1000
+}
 .ivu-icon:before,
 .ivu-icon:after {
   font-family: Ionicons !important;
@@ -41,6 +55,13 @@
     -moz-transition: -moz-box-shadow 0.15s ease-in;
     -o-transition: -o-box-shadow 0.15s ease-in;
     transition: box-shadow 0.15s ease-in;
+}
+.left-content {
+    width: 20%;
+    border-right: #eee 1px solid;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 .param-name {
   text-align: left;
