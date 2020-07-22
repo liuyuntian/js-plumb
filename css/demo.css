@@ -8,19 +8,24 @@
 	width:12em;
 	line-height:2em;
 }
-ul div {
-    margin-left: 6%;
+.show-div {
     height: 40px;
-    font-weight: bold;
+    min-width: 180px;
+    position: absolute;
+    z-index: 1000;
 }
-li {
-    margin-left: 12%;
+.left-content-parent {
+    position: relative;
+}
+.left-sub-title {
+    font-weight: normal;
     height: 40px;
     display: flex;
     align-items: center;
     border-top: 1px solid #eee;
     border-bottom: 1px solid #eee;
-    z-index: 1000
+    z-index: 1000;
+    cursor: pointer;
 }
 .ivu-icon:before,
 .ivu-icon:after {
@@ -62,6 +67,7 @@ li {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    min-width: 180px;
 }
 .param-name {
   text-align: left;

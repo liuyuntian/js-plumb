@@ -1,9 +1,10 @@
 var vm = new Vue({
   el: "#app",
-  template: '<div id="drawDiv" @mousemove="moveMouse($event)" style="height: 100%; display: flex; justify-content: flex-end">' +
+  template: '<div id="drawDiv" style="height: 100%; display: flex; justify-content: flex-end">' +
     '        <div class="left-content">' +
-    '         <div>' +
-    '           <ul v-for="item in modelData"><div>{{item.name}}</div><li v-for="item1 in item.content" class="left-sub-title">{{item1.name}}</li></ul>' +
+    '         <div class="left-content-parent">' +
+    '           <div class="drag-window" v-for="item in modelData"><h3>{{item.name}}</h3><div v-for="item1 in item.content" :id="item1.id" class="left-sub-title">{{item1.name}}</div></div>' +
+    '             <div v-show="isDragging" class="show-div" ref="controlNode">{{showName}}</div>' +
     '         </div>' +
     '         <el-button type="primary" @click="saveChange">保 存</el-button>' +
     '        </div>' +
@@ -57,6 +58,7 @@ var vm = new Vue({
     newNodeEvent: null,
     isDragging: false,
     instance: {},
+    showName: '',
     tableForm: null,
     currentItem: 0,
     currentConn: null,
@@ -66,17 +68,17 @@ var vm = new Vue({
       {
         id: 1,
         name: '公共信息模型',
-        content: [{ id: 1, name: '数据字典' }, { id: 2, name: '公共数据源' }, { id: 3, name: '业务配置表' }, {
-          id: 4, name: '组织模型'
-        }, { id: 5, name: '角色模型' }, { id: 6, name: '权限模型' }, { id: 7, name: '人员模型' }]
+        content: [{ id: 111, name: '数据字典' }, { id: 112, name: '公共数据源' }, { id: 113, name: '业务配置表' }, {
+          id: 114, name: '组织模型'
+        }, { id: 115, name: '角色模型' }, { id: 116, name: '权限模型' }, { id: 117, name: '人员模型' }]
       }, {
         id: 1,
         name: '业务模型',
-        content: [{ id: 1, name: '客户信息表' }, { id: 2, name: '客户订单表' }]
+        content: [{ id: 121, name: '客户信息表' }, { id: 122, name: '客户订单表' }]
       }, {
         id: 1,
         name: '业务组合模型',
-        content: [{ id: 1, name: '客户订单物流信息表' }]
+        content: [{ id: 131, name: '客户订单物流信息表' }]
       }
     ],
     defaultProps: {
@@ -184,13 +186,6 @@ var vm = new Vue({
     cancel(){
       this.dialogVisible = false;
     },
-    moveMouse(event){
-      if (this.isDragging === true){
-        this.newElements.style.left = event.offsetX;
-        this.newElements.style.top = event.offsetY;
-        console.log(event.offsetX + ',' + event.offsetY);
-      }
-    },
     // 增加字段项
     editTable(conn){
       let vm = this;
@@ -223,21 +218,21 @@ var vm = new Vue({
     saveChange(){
       console.log(this.data)
     },
-    createFlow(){
+    createFlow() {
       let vm = this;
       const color = '#409EFF';
       window.s = vm.instance = jsPlumb.getInstance({
         // notice the 'curviness' argument to this Bezier curve.
         // the curves on this page are far smoother
         // than the curves on the first demo, which use the default curviness value.
-        Connector: ['Flowchart', { curviness: 50 }],
-        DragOptions: { cursor: 'pointer', zIndex: 5000 },
-        PaintStyle: { lineWidth: 5, stroke: color },
-        HoverPaintStyle: { stroke: '#66b1ff', lineWidth: 4 },
-        EndpointHoverStyle: { fill: '#66b1ff', stroke: '#66b1ff' },
+        Connector: ['Flowchart', {curviness: 50}],
+        DragOptions: {cursor: 'pointer', zIndex: 5000},
+        PaintStyle: {lineWidth: 5, stroke: color},
+        HoverPaintStyle: {stroke: '#66b1ff', lineWidth: 4},
+        EndpointHoverStyle: {fill: '#66b1ff', stroke: '#66b1ff'},
         deleteEndpointsOnDetach: false,
         Container: 'points',
-        Endpoint: ['Dot', { radius: 12 }],
+        Endpoint: ['Dot', {radius: 12}],
         EndpointStyle: {
           stroke: "#aaa",
           fill: "#F2F2F2",
@@ -266,6 +261,82 @@ var vm = new Vue({
             }
           ]]
       });
+      vm.instance.draggable(document.querySelectorAll('.point'), {
+        containment: 'points',
+        // 拖拽后改变位置
+        stop: function (e){
+          vm.data.formMap[e.el.id].x = (e.pos[0] / e.el.parentNode.offsetWidth).toFixed(2) * 100;
+          vm.data.formMap[e.el.id].y = (e.pos[1] / e.el.parentNode.offsetHeight).toFixed(2) * 100;
+        }
+      });
+      vm.instance.draggable(document.querySelectorAll('.left-sub-title'), {
+        helper: 'clone',
+        scope: 'ss',
+        drag: function(e) {
+          vm.isDragging = true;
+          vm.showName = e.el.textContent;
+          vm.$refs.controlNode.style.left = e.el.style.left;
+          vm.$refs.controlNode.style.top = e.el.style.top;
+        }
+      });
+      // 拖拽新增
+      vm.instance.droppable('points',{
+        scope: 'ss',
+        drop: function(event){
+          let leftP = ((event.e.x - event.drag.el.offsetWidth) / event.drop.el.offsetWidth).toFixed(2) * 100;
+          let topP = (event.e.y / event.drop.el.offsetHeight).toFixed(2) * 100;
+          vm.$set(vm.data.formMap, event.drag.el.id, {
+            x: leftP,
+            y: topP,
+            name: event.drag.el.textContent,
+            fieldIds: [1, 2],//字段id列表
+            fieldMap: {//以字段id为key的字段map
+              1: {
+                id: 1, //字段id
+                bizId: 'column1',//业务id，表字段名
+                name: 'xxx',//字段中文名
+                otherAttrs: { //其它属性中
+                  targetLines: [{ // 连线都放到起点节点上，数组json结构存储,目标节点连线,支持多个
+                  }],
+                }
+              }
+            },
+          });
+          vm.isDragging = false;
+          vm.showName = '';
+          vm.$nextTick(()=>{
+            vm.addNew();
+          });
+        }
+      });
+      vm.setjsPlumbAttr();
+    },
+    addNew() {
+      let lastIndex = Object.keys(vm.data.formMap).length - 1
+      let lastNode = vm.data.formMap[Object.keys(vm.data.formMap)[lastIndex]];
+      vm.instance.draggable(document.querySelectorAll('.point')[lastIndex], {
+        containment: 'points',
+        // 拖拽后改变位置
+        stop: function (e){
+          vm.data.formMap[e.el.id].x = (e.pos[0] / e.el.parentNode.offsetWidth).toFixed(2) * 100;
+          vm.data.formMap[e.el.id].y = (e.pos[1] / e.el.parentNode.offsetHeight).toFixed(2) * 100;
+        }
+      });
+      vm.instance.batch(() => {
+        for (const m in lastNode.fieldMap){
+          vm.instance.makeSource(Object.keys(vm.data.formMap)[lastIndex] + '-' + m, {
+            anchor: ["Continuous", { faces: ["left", "right"] }],
+            endpoint: 'Dot',
+            maxConnections: 1,
+          });
+          vm.instance.makeTarget(Object.keys(vm.data.formMap)[lastIndex] + '-' + m, {
+            anchor: ["Continuous", { faces: ["left", "right"] }],
+            allowLoopback: false
+          });
+        }
+      })
+    },
+    setjsPlumbAttr() {
       // suspend drawing and initialise.
       vm.instance.batch(() => {
         // init point
@@ -281,47 +352,6 @@ var vm = new Vue({
               allowLoopback: false
             });
           }
-          vm.instance.draggable(`${point}`, {
-            containment: 'points',
-            // 拖拽后改变位置
-            stop: function (e){
-              vm.data.formMap[e.el.id].x = (e.pos[0] / e.el.parentNode.offsetWidth).toFixed(2) * 100;
-              vm.data.formMap[e.el.id].y = (e.pos[1] / e.el.parentNode.offsetHeight).toFixed(2) * 100;
-            }
-          });
-          vm.instance.draggable(document.querySelectorAll('.left-sub-title'), {
-            helper: 'clone',
-            scope: 'ss',
-            drag: function(e) {
-              e.el.style.position = 'absolute';
-            }
-          });
-          // 拖拽新增
-          vm.instance.droppable('points',{
-            scope: 'ss',
-            drop: function(event){
-              let leftP = (parseInt(event.drag.el.style.left) / event.drop.el.offsetWidth).toFixed(2) * 100;
-              let topP = (parseInt(event.drag.el.style.top) / event.drop.el.offsetHeight).toFixed(2) * 100;
-              vm.$set(vm.data.formMap, event.drag.el.id, {
-                x: leftP,
-                y: topP,
-                name: event.drag.el.textContent,
-                fieldIds: [1, 2],//字段id列表
-                fieldMap: {//以字段id为key的字段map
-                  1: {
-                    id: 1, //字段id
-                    bizId: 'column1',//业务id，表字段名
-                    name: 'xxx',//字段中文名
-                    otherAttrs: { //其它属性中
-                      targetLines: [{ // 连线都放到起点节点上，数组json结构存储,目标节点连线,支持多个
-                      }],
-                    }
-                  }
-                },
-              });
-              console.log(vm.data.formMap)
-            }
-          });
         }
         // init transition
         for (const i in vm.data.formMap){
