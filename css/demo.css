@@ -8,6 +8,17 @@
 	width:12em;
 	line-height:2em;
 }
+.bottom-menu {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    border-top: 1px solid #eee;
+    box-shadow: 2px 2px 19px #aaa;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+}
 .show-div {
     height: 40px;
     min-width: 180px;
