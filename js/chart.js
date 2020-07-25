@@ -186,7 +186,7 @@ var vm = new Vue({
         },
         // 没有坐标生成1000 X 500 的随机坐标
         calPosition(point, val) {
-            if (val.x && val.y) {
+            if (val.x !== undefined && val.y !== undefined) {
                 return {left: val.x + '%', top: val.y + '%'}
             } else {
                 let randomX = Math.ceil(Math.random() * 80);
