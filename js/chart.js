@@ -478,6 +478,14 @@ var vm = new Vue({
                             });
                             return;
                         }
+                        if(item.targetId === conn.targetId && item.sourceId === conn.sourceId) {
+                            repeat = false
+                            vm.$message({
+                                message: '相同的两个字段只能有一种关系 ！',
+                                type: 'error'
+                            });
+                            return;
+                        }
                     })
                     return repeat;
                 });
