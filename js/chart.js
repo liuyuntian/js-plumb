@@ -259,7 +259,7 @@ var vm = new Vue({
                 Connector: ['Flowchart', {curviness: 50}],
                 DragOptions: {cursor: 'pointer', zIndex: 5000},
                 PaintStyle: {lineWidth: 5, stroke: color},
-                HoverPaintStyle: {stroke: '#66b1ff', lineWidth: 4},
+                HoverPaintStyle: {stroke: '#0000ff', lineWidth: 20},
                 EndpointHoverStyle: {fill: '#66b1ff', stroke: '#66b1ff'},
                 deleteEndpointsOnDetach: false,
                 Container: 'points',
