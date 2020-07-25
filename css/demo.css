@@ -8,10 +8,14 @@
 	width:12em;
 	line-height:2em;
 }
+.el-dialog__body {
+    padding: 0px 20px !important;
+}
 .bottom-menu {
+    justify-content: center;
     position: fixed;
     bottom: 0;
-    width: 100%;
+    width: 80%;
     border-top: 1px solid #eee;
     box-shadow: 2px 2px 19px #aaa;
     height: 40px;

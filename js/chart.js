@@ -16,13 +16,16 @@ var vm = new Vue({
         '          </div>' +
         '         <div class="bottom-menu">' +
         '         <el-button type="primary" @click="saveChange" >保 存</el-button>' +
+        '         <el-button @click="cancelChange" >重 置</el-button>' +
+
         '  </div>' +
         '        </div>' +
         '        <el-dialog' +
         '                title="关联设置"' +
         '                :visible.sync="editVisible"' +
-        '                width="30%">' +
-        '            <el-form v-if="tableForm" ref="tableForm" :model="tableForm" label-width="100">' +
+        '                 size="mini"' +
+        '                 width="30%">' +
+        '            <el-form v-if="tableForm" size="mini" ref="tableForm" :model="tableForm" label-width="100">' +
         '                <el-form-item prop="name" label="子表名：">' +
         '                    <el-input v-model="data.formMap[tableForm.formId].name" readonly/>' +
         '                </el-form-item>' +
@@ -48,9 +51,9 @@ var vm = new Vue({
         '              </el-form-item>' +
         '            </el-form>' +
         '            <div slot="footer" class="dialog-footer">' +
-        '                <el-button @click="editCancel">取 消</el-button>' +
-        '                <el-button type="danger" @click="deleteConnection">删 除</el-button>' +
-        '                <el-button type="primary" @click="tableChange">确 定</el-button>' +
+        '                <el-button size="mini" @click="editCancel">取 消</el-button>' +
+        '                <el-button size="mini" type="danger" @click="deleteConnection">删 除</el-button>' +
+        '                <el-button size="mini" type="primary" @click="tableChange">确 定</el-button>' +
         '            </div>' +
         '        </el-dialog>' +
         '    </div>',
@@ -67,6 +70,7 @@ var vm = new Vue({
         currentConn: null,
         editVisible: false,
         dialogVisible: false,
+        // 左侧菜单
         modelData: [
             {
                 id: 1,
@@ -88,6 +92,7 @@ var vm = new Vue({
             children: 'content',
             label: 'name'
         },
+        // 假数据
         data: {
             formIds: [],//表单的id列表
             formMap: { //以表单的id作为key的表单Map结构
@@ -176,6 +181,9 @@ var vm = new Vue({
         },
     },
     methods: {
+        cancelChange() {
+            location.reload();
+        },
         // 没有坐标生成1000 X 500 的随机坐标
         calPosition(point, val) {
             if (val.x && val.y) {
@@ -199,9 +207,12 @@ var vm = new Vue({
         tableChange() {
             // 保存修改后连线
             this.editVisible = false;
+            let dashedType = {
+                paintStyle: { stroke: "gray", strokeWidth: 5 },
+            };
             this.currentConn.getOverlay("label").setLabel(this.tableForm.lineType === 1 ? '关联' : '推送');
+            this.currentConn.getOverlay("label").setPaintStyle(dashedType, true);
             this.tableForm.lineId = (this.tableForm.formId + '_' + this.tableForm.fieldId + '_' + this.tableForm.targetFormId + '_' + this.tableForm.targetFieldId + '_' + this.tableForm.lineType);
-            console.log(this.data.formMap);
         },
         cancel() {
             this.dialogVisible = false;
@@ -455,6 +466,14 @@ var vm = new Vue({
                             repeat = false
                             vm.$message({
                                 message: '一个字段只可以被推送一次 ！',
+                                type: 'error'
+                            });
+                            return;
+                        }
+                        if(item.targetId === conn.sourceId && item.sourceId === conn.targetId) {
+                            repeat = false
+                            vm.$message({
+                                message: '两个字段之间不能相互连线 ！',
                                 type: 'error'
                             });
                             return;
