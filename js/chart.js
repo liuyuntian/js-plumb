@@ -176,7 +176,7 @@ var vm = new Vue({
                     repeat = true;
                     return;
                 }
-            })
+            });
             return repeat;
         },
     },
@@ -207,11 +207,9 @@ var vm = new Vue({
         tableChange() {
             // 保存修改后连线
             this.editVisible = false;
-            let dashedType = {
-                paintStyle: { stroke: "gray", strokeWidth: 5 },
-            };
             this.currentConn.getOverlay("label").setLabel(this.tableForm.lineType === 1 ? '关联' : '推送');
-            this.currentConn.getOverlay("label").setPaintStyle(dashedType, true);
+            this.currentConn.setPaintStyle({strokeWidth: 1, stroke: this.tableForm.lineType === 2 ? "#67C23A" : '#409EFF'});
+            this.currentConn.setHoverPaintStyle({strokeWidth: 3, stroke: this.tableForm.lineType === 2 ? "#85ce61" : '#66b1ff'});
             this.tableForm.lineId = (this.tableForm.formId + '_' + this.tableForm.fieldId + '_' + this.tableForm.targetFormId + '_' + this.tableForm.targetFieldId + '_' + this.tableForm.lineType);
         },
         cancel() {
@@ -259,11 +257,10 @@ var vm = new Vue({
                 Connector: ['Flowchart', {curviness: 50}],
                 DragOptions: {cursor: 'pointer', zIndex: 5000},
                 PaintStyle: {lineWidth: 5, stroke: color},
-                HoverPaintStyle: {stroke: '#0000ff', lineWidth: 20},
-                EndpointHoverStyle: {fill: '#66b1ff', stroke: '#66b1ff'},
+                HoverPaintStyle: {stroke: '#66b1ff', lineWidth: 20},
                 deleteEndpointsOnDetach: false,
                 Container: 'points',
-                Endpoint: ['Dot', {radius: 12}],
+                Endpoint: ['Blank', {radius: 12}],
                 EndpointStyle: {
                     stroke: "#aaa",
                     fill: "#F2F2F2",
@@ -392,6 +389,8 @@ var vm = new Vue({
                                 vm.instance.connect({
                                     source: targetLines[line].formId + '-' + targetLines[line].fieldId,
                                     target: targetLines[line].targetFormId + '-' + targetLines[line].targetFieldId,
+                                    paintStyle: {strokeWidth: 1, stroke: targetLines[line].lineType === 1 ? '#409EFF' : '#67C23A'},
+                                    hoverPaintStyle: {stroke: targetLines[line].lineType === 1 ? '#66b1ff' : '#85ce61', strokeWidth: 3},
                                     overlays: [
                                         [
                                             "Arrow",
