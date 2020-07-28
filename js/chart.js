@@ -1,24 +1,26 @@
 var vm = new Vue({
   el: "#app",
   template: '<div id="drawDiv" style="height: 100%; display: flex; justify-content: flex-end">' +
-    '        <div class="left-content">' +
+    '        <div class="left-content" @mouseup="mouseUp">' +
     '         <div class="left-content-parent">' +
     '           <div class="drag-window" v-for="item in modelData"><h3>{{item.name}}</h3><div v-for="item1 in item.content" :id="item1.id" class="left-sub-title">{{item1.name}}</div></div>' +
     '             <div v-show="isDragging" class="show-div" ref="controlNode">{{showName}}</div>' +
     '         </div>' +
     '        </div>' +
-    '        <div class="panel-body points demo flow_chart" id="points" ref="dragContent" :style="calZoom">' +
+    '         <div class="point-parent" id="points-parent" @mousedown="mouseDown" @mousemove="mouseMove" @mouseup="mouseUp">' +
+    '        <div class="panel-body points demo flow_chart" id="points" :style="calZoom" style="top: 0;left: 0;" ref="canvas">' +
     '          <div v-for="(val, point) in data.formMap" :id="point" class="point" :style="calPosition(point, val)">' +
     '            <div :id="`drag-${point}`" style="padding:0 0.5em; background: #409EFF; cursor: default; display: flex; justify-content: space-between"><span class="name-change" style="font-size: 12px;">{{val.name}}</span></div>' +
     '            <div class="add-content">' +
     '              <div v-for="(val1, m) in val.fieldMap" title="拖动可以进行连线" style="color:black; border-top: 1px solid #cccccc;display: flex;padding: 0 0.8em; justify-content: space-between" :id="point + \'-\' + m"><div class="param-name" style="font-size: 12px">{{val1.name}}</div></div>' +
     '            </div>' +
     '          </div>' +
+    '        </div>' +
+    '        </div>' +
     '         <div class="bottom-menu">' +
     '         <el-button type="primary" @click="saveChange" >保 存</el-button>' +
     '         <el-button @click="cancelChange" >重 置</el-button>' +
     '           </div>' +
-    '        </div>' +
     '        <el-dialog' +
     '                title="关联设置"' +
     '                :visible.sync="editVisible"' +
@@ -63,7 +65,11 @@ var vm = new Vue({
     newNodeEvent: null,
     isDragging: false,
     instance: {},
+    isMoving: false,
     zoom: 1,
+    currentPosition: { x: 0, y: 0 },
+    lastPosition: { x: 0, y: 0 },
+    lastMove: { x: 0, y: 0 },
     showName: '',
     tableForm: null,
     currentItem: 0,
@@ -162,22 +168,28 @@ var vm = new Vue({
     jsPlumb.ready(() => {
       this.createFlow(this.data);
     });
-    document.onmousewheel = (e) =>{
-      if(e.target.id === this.$refs.dragContent.id) {
+    document.onmousewheel = (e) => {
+      if (e.target.id === 'points-parent' || e.target.id === 'points'){
         this.setZoom(e);
       }
     }
   },
   computed: {
-    calZoom() {
-      // let z = {
-      //   "-webkit-transform": `scale(${this.zoom})`,
-      //   "-moz-transform": `scale(${this.zoom})`,
-      //   "-ms-transform": `scale(${this.zoom})`,
-      //   "-o-transform": `scale(${this.zoom})`,
-      //   "transform": `scale(${this.zoom})`
-      // }
-      // return z;
+    calZoom(e){
+      if (e > 0){
+        this.zoom += 0.1
+      }else if (e < 0){
+        this.zoom -= 0.1
+      }
+      let z = {
+        "-webkit-transform": `scale(${this.zoom.toFixed(1)})`,
+        "-moz-transform": `scale(${this.zoom.toFixed(1)})`,
+        "-ms-transform": `scale(${this.zoom.toFixed(1)})`,
+        "-o-transform": `scale(${this.zoom.toFixed(1)})`,
+        "transform": `scale(${this.zoom.toFixed(1)})`
+      };
+      console.log(this.zoom);
+      return z;
     },
     optionChoose(){
       let connectionList = vm.instance.getAllConnections();
@@ -196,11 +208,50 @@ var vm = new Vue({
     },
   },
   methods: {
+    mouseUp(e){
+      if (this.isMoving){
+        this.lastPosition = { x: this.$refs.canvas.style.left, y: this.$refs.canvas.style.top }
+        this.$refs.canvas.style.cursor = 'default';
+        this.isMoving = false;
+      }
+      ;
+    },
+    mouseDown(e){
+      this.isMoving = true
+      this.currentPosition.x = e.x;
+      this.currentPosition.y = e.y;
+      this.lastMove.x = e.x;
+      this.lastMove.y = e.y;
+    },
+    mouseMove(e){
+      if (this.isMoving){
+        this.$refs.canvas.style.cursor = 'grabbing';
+        this.$refs.canvas.style.left = parseInt(this.lastPosition.x) + e.x - this.currentPosition.x + 'px';
+        this.$refs.canvas.style.top = parseInt(this.lastPosition.y) + e.y - this.currentPosition.y + 'px';
+        if (parseInt(this.$refs.canvas.style.left) < 0-(this.$refs.canvas.getBoundingClientRect().width - this.$refs.canvas.offsetWidth) / 2){
+          this.$refs.canvas.style.left = (this.$refs.canvas.offsetWidth - this.$refs.canvas.getBoundingClientRect().width)/2 + 'px';
+        }
+        if (parseInt(this.$refs.canvas.style.left) > (this.$refs.canvas.getBoundingClientRect().width - this.$refs.canvas.offsetWidth) / 2){
+          this.$refs.canvas.style.left = (this.$refs.canvas.getBoundingClientRect().width - this.$refs.canvas.offsetWidth) / 2 + 'px';
+        }
+        if (parseInt(this.$refs.canvas.style.top) < 0-(this.$refs.canvas.getBoundingClientRect().height - this.$refs.canvas.offsetHeight) / 2){
+          this.$refs.canvas.style.top = (this.$refs.canvas.offsetHeight - this.$refs.canvas.getBoundingClientRect().height)/2 + 'px';
+        }
+        if (parseInt(this.$refs.canvas.style.top) > (this.$refs.canvas.getBoundingClientRect().height - this.$refs.canvas.offsetHeight) / 2){
+          this.$refs.canvas.style.top = (this.$refs.canvas.getBoundingClientRect().height - this.$refs.canvas.offsetHeight) / 2 + 'px';
+        }
+      }
+    },
     setZoom(e){
-      if (e.deltaY > 0) {
+      if (e.deltaY < 0 && this.zoom < 2){
         this.zoom = this.zoom + 0.1
-      } else {
+      }else if (e.deltaY > 0 && this.zoom > 1){
+        this.$refs.canvas.style.left = '0px';
+        this.$refs.canvas.style.top = '0px';
+        this.lastPosition = {x:0, y:0};
         this.zoom = this.zoom - 0.1
+      }else{
+        return;
       }
     },
     cancelChange(){
@@ -211,8 +262,8 @@ var vm = new Vue({
       if (val.x !== undefined && val.y !== undefined){
         return { left: val.x + '%', top: val.y + '%' }
       }else{
-        let randomX = Math.ceil(Math.random() * 80);
-        let randomY = Math.ceil(Math.random() * 80);
+        let randomX = Math.ceil(Math.random() * 70);
+        let randomY = Math.ceil(Math.random() * 70);
         this.data.formMap[point].x = randomX;
         this.data.formMap[point].y = randomY;
         return { left: randomX + '%', top: randomY + '%' }
@@ -482,7 +533,10 @@ var vm = new Vue({
               vm.lineAttr.lineId = (conn.sourceId + '_' + conn.targetId + '_2').replace(/-/g, '_');
             }
             conn.connection.getOverlay("label").setLabel(vm.lineAttr.lineType === 1 ? '关联' : '推送');
-            conn.connection.setPaintStyle({ strokeWidth: 1, stroke: vm.lineAttr.lineType === 2 ? "#67C23A" : '#409EFF' });
+            conn.connection.setPaintStyle({
+              strokeWidth: 1,
+              stroke: vm.lineAttr.lineType === 2 ? "#67C23A" : '#409EFF'
+            });
             conn.connection.setHoverPaintStyle({
               strokeWidth: 3,
               stroke: vm.lineAttr.lineType === 2 ? "#85ce61" : '#66b1ff'
