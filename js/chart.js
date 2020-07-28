@@ -482,6 +482,11 @@ var vm = new Vue({
               vm.lineAttr.lineId = (conn.sourceId + '_' + conn.targetId + '_2').replace(/-/g, '_');
             }
             conn.connection.getOverlay("label").setLabel(vm.lineAttr.lineType === 1 ? '关联' : '推送');
+            conn.connection.setPaintStyle({ strokeWidth: 1, stroke: vm.lineAttr.lineType === 2 ? "#67C23A" : '#409EFF' });
+            conn.connection.setHoverPaintStyle({
+              strokeWidth: 3,
+              stroke: vm.lineAttr.lineType === 2 ? "#85ce61" : '#66b1ff'
+            });
           }
           let repeat = true;
           let connectionList = vm.instance.getAllConnections();
