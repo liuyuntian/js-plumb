@@ -7,7 +7,7 @@ var vm = new Vue({
     '             <div v-show="isDragging" class="show-div" ref="controlNode">{{showName}}</div>' +
     '         </div>' +
     '        </div>' +
-    '        <div class="panel-body points demo flow_chart" id="points" ref="dragContent">' +
+    '        <div class="panel-body points demo flow_chart" id="points" ref="dragContent" :style="calZoom">' +
     '          <div v-for="(val, point) in data.formMap" :id="point" class="point" :style="calPosition(point, val)">' +
     '            <div :id="`drag-${point}`" style="padding:0 0.5em; background: #409EFF; cursor: default; display: flex; justify-content: space-between"><span class="name-change" style="font-size: 12px;">{{val.name}}</span></div>' +
     '            <div class="add-content">' +
@@ -63,6 +63,7 @@ var vm = new Vue({
     newNodeEvent: null,
     isDragging: false,
     instance: {},
+    zoom: 1,
     showName: '',
     tableForm: null,
     currentItem: 0,
@@ -163,11 +164,21 @@ var vm = new Vue({
     });
     document.onmousewheel = (e) =>{
       if(e.target.id === this.$refs.dragContent.id) {
-        this.setZoom();
+        this.setZoom(e);
       }
     }
   },
   computed: {
+    calZoom() {
+      // let z = {
+      //   "-webkit-transform": `scale(${this.zoom})`,
+      //   "-moz-transform": `scale(${this.zoom})`,
+      //   "-ms-transform": `scale(${this.zoom})`,
+      //   "-o-transform": `scale(${this.zoom})`,
+      //   "transform": `scale(${this.zoom})`
+      // }
+      // return z;
+    },
     optionChoose(){
       let connectionList = vm.instance.getAllConnections();
       let repeat = false;
@@ -185,8 +196,12 @@ var vm = new Vue({
     },
   },
   methods: {
-    setZoom(){
-
+    setZoom(e){
+      if (e.deltaY > 0) {
+        this.zoom = this.zoom + 0.1
+      } else {
+        this.zoom = this.zoom - 0.1
+      }
     },
     cancelChange(){
       location.reload();
