@@ -381,6 +381,9 @@ var vm = new Vue({
           vm.showName = e.el.textContent;
           vm.$refs.controlNode.style.left = e.el.style.left;
           vm.$refs.controlNode.style.top = e.el.style.top;
+        },
+        stop: function () {
+            vm.isDragging = false;
         }
       });
       // 拖拽新增
